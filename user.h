@@ -39,3 +39,4 @@ void free(void*);
 int atoi(const char*);
 void shutdown(void);
 void enable_sched_trace(int enable);
+void set_sched(int);

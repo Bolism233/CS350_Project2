@@ -112,3 +112,22 @@ int sys_enable_sched_trace(void)
 
   return 0;
 }
+
+int sys_set_sched(void) {
+    int policy;
+    if(argint(0, &policy) < 0){
+      cprintf("Available options: 0 is default scheduler, 1 is strided scheduler");
+      return 2;
+    }
+    if(policy == 0){
+      cprintf("adopting RR scheduling\n");
+      return policy;
+      //default
+    }
+    if(policy == 1){
+      cprintf("adopting stride scheduling\n");
+      return policy;
+      //stride
+    }
+    return 2;
+}

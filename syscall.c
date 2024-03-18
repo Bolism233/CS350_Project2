@@ -82,6 +82,7 @@ argstr(int n, char **pp)
   return fetchstr(addr, pp);
 }
 
+
 extern int sys_chdir(void);
 extern int sys_close(void);
 extern int sys_dup(void);
@@ -105,6 +106,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_shutdown(void);
 extern int sys_enable_sched_trace(void);
+extern int sys_set_sched(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,6 +132,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_shutdown]      sys_shutdown,
 [SYS_enable_sched_trace]   sys_enable_sched_trace,
+[SYS_set_sched]   sys_set_sched,
 };
 
 void
