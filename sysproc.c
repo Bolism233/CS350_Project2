@@ -6,6 +6,8 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "spinlock.h"
+
 
 int
 sys_fork(void)
@@ -113,21 +115,45 @@ int sys_enable_sched_trace(void)
   return 0;
 }
 
+extern int current_scheduler;
 int sys_set_sched(void) {
     int policy;
-    if(argint(0, &policy) < 0){
-      cprintf("Available options: 0 is default scheduler, 1 is strided scheduler");
-      return 2;
-    }
     if(policy == 0){
-      cprintf("adopting RR scheduling\n");
-      return policy;
       //default
+      cprintf("adopting RR scheduling\n");
+      current_scheduler = 0;
+      return policy;
     }
     if(policy == 1){
-      cprintf("adopting stride scheduling\n");
-      return policy;
       //stride
+      cprintf("adopting stride scheduling\n");
+      current_scheduler = 1;
+      cprintf("current scheduler: %d\n", current_scheduler);
+      return policy;
     }
-    return 2;
+    return 0;
 }
+
+extern struct {
+    struct spinlock lock;
+    struct proc proc[NPROC];
+} ptable;
+
+int sys_tickets_owned(void) {
+    int pid;
+    struct proc *p;
+    
+    if(argint(0, &pid) < 0){
+      cprintf("Available options: 0 is default scheduler, 1 is strided scheduler");
+      return 0;
+    }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    // Check if the PID matches
+      if (p->pid == pid) {
+          // Return the number of tickets owned by the process
+          cprintf("%d\n", p->ticket);
+          return 0;
+      }
+    }
+}
+

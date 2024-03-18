@@ -21,7 +21,6 @@ void set_sched(int scheduler) {
   
 #define STUB_FUNCS
 #ifdef STUB_FUNCS
-int tickets_owned(int pid) {return 0;}
 int transfer_tickets(int pid, int tickets) {return 0;}
 #endif
 
@@ -121,7 +120,7 @@ void print_proc_tickets(int cnt)
     printf(1, "parent (pid %d) has %d tickets.\n", getpid(), tickets_owned(getpid()));
     
     for (i = 0; i < child_cnt; i++)
-    {  
+    {
         printf(1, "child (pid %d) has %d tickets.\n", child[i].pid, tickets_owned(child[i].pid));     
     }    
 }

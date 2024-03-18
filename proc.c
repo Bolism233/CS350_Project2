@@ -7,6 +7,9 @@
 #include "proc.h"
 #include "spinlock.h"
 
+// for selecting the scheduler
+int current_scheduler = 0;
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -140,6 +143,9 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->ticket = 100;
+  cprintf("ticket: %d\n", p->ticket);
+  cprintf("pid: %d\n", p->pid);
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -331,7 +337,6 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
         ran = 0;

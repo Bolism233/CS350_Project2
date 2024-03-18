@@ -180,6 +180,7 @@ UPROGS=\
 	_fork_rc_test \
 	_schdtest \
 	_set_sched \
+	_tickets_owned \
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
