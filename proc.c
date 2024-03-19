@@ -96,9 +96,10 @@ found:
   //p->ticket = 100;
   p->stride = 0;
   p->pass = 0;
-  p->ticket = 0;
+  p->ticket = 100;
 
   release(&ptable.lock);
+  update_stride();
 
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
@@ -169,6 +170,7 @@ userinit(void)
   p->state = RUNNABLE;
 
   release(&ptable.lock);
+  update_stride();
 }
 
 // Grow current process's memory by n bytes.
