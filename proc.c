@@ -93,7 +93,10 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->ticket = 100;
+  //p->ticket = 100;
+  p->stride = 0;
+  p->pass = 0;
+  p->ticket = 0;
 
   release(&ptable.lock);
 
@@ -144,9 +147,9 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
-  p->ticket = 100;
+  /*p->ticket = 100;
   cprintf("ticket: %d\n", p->ticket);
-  cprintf("pid: %d\n", p->pid);
+  cprintf("pid: %d\n", p->pid);*/
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -156,6 +159,12 @@ userinit(void)
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
+
+  if(current_scheduler == 1){
+    p->stride = 0;
+    p->pass = 0;
+    p->ticket = 0;
+  }
 
   p->state = RUNNABLE;
 
@@ -334,37 +343,83 @@ scheduler(void)
   c->proc = 0;
   
   int ran = 0; // CS 350/550: to solve the 100%-CPU-utilization-when-idling problem
+  if(current_scheduler == 0){
+    for(;;){
+      // Enable interrupts on this processor.
+      sti();
+          // Loop over process table looking for process to run.
+          acquire(&ptable.lock);
+          ran = 0;
+          for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+            if(p->state != RUNNABLE)
+              continue;
 
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
-        // Loop over process table looking for process to run.
-        acquire(&ptable.lock);
-        ran = 0;
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-          if(p->state != RUNNABLE)
-            continue;
+            ran = 1;
+        
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
 
-          ran = 1;
-      
-          // Switch to chosen process.  It is the process's job
-          // to release ptable.lock and then reacquire it
-          // before jumping back to us.
-          c->proc = p;
-          switchuvm(p);
-          p->state = RUNNING;
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
 
-          swtch(&(c->scheduler), p->context);
-          switchkvm();
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+      }
+      release(&ptable.lock);
 
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
-          c->proc = 0;
+      if (ran == 0){
+          halt();
+      }
     }
-    release(&ptable.lock);
+  }
 
-    if (ran == 0){
-        halt();
+  else{
+    for(;;){
+      update_stride();
+      int min_pass = 2147483647;
+      struct proc *chosen_proc = 0;
+      // Enable interrupts on this processor.
+      sti();
+          // Loop over process table looking for process to run.
+          acquire(&ptable.lock);
+          ran = 0;
+          for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+            if(p->state != RUNNABLE)
+              continue;
+
+            if(p->pass < min_pass) {
+              min_pass = p->pass;
+              chosen_proc = p;
+            }
+          }
+
+          if(chosen_proc != 0){
+            ran = 1;
+        
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            c->proc = chosen_proc;
+            switchuvm(chosen_proc);
+            chosen_proc->state = RUNNING;
+
+            swtch(&(c->scheduler), chosen_proc->context);
+            switchkvm();
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+      }
+      release(&ptable.lock);
+
+      if (ran == 0){
+          halt();
+      }
     }
   }
 }
@@ -560,4 +615,30 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+void
+update_stride(void)
+{
+  struct proc *p;
+  int active_procs = 0;
+
+  acquire(&ptable.lock);
+
+  // Count the number of active processes
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state == RUNNABLE || RUNNING)
+      active_procs++;
+  }
+
+  // Update stride, pass and ticket values for all active processes
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state == RUNNABLE || RUNNING) {
+      p->ticket = 100/active_procs;
+      p->stride = 1000/p->ticket;
+      p->pass += p->stride;
+    }
+  }
+
+  release(&ptable.lock);
 }
