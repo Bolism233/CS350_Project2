@@ -5,7 +5,7 @@
    stub functions for the system call user space wrapper functions are provided. 
    REMEMBER to disable the stub functions (by commenting the following macro) to 
    allow your implementation to work properly. */
-void fork_winner(int winner) {}
+//void fork_winner(int winner) {}
 /* #define STUB_FUNCS
 #ifdef STUB_FUNCS
 void set_sched(int scheduler) {}

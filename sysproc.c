@@ -208,3 +208,14 @@ int sys_transfer_tickets(void){
     }
   }
 }
+
+int sys_fork_winner(void) {
+  int n;
+  
+  if (argint(0, &n) < 0) {
+    return -1;
+  }
+  
+  fork_winner = n;
+  return 0;
+}
