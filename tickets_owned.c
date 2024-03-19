@@ -15,13 +15,17 @@
 int 
 main(int argc, char * argv[])
 {
-    if (argc < 2) {
+    if (argc != 2) {
         // No parameters provided
-        printf(1, "No parameter provided.\n");
+        printf(1, "Too much or too few arguments provided.\n");
+        exit();
+    }
+	int pid = atoi(argv[1]);
+    if (pid == 0 && argv[1][0] != '0') {
+        printf(1, "Error: Invalid argument. Please provide an integer.\n");
         exit();
     }
 
-	int pid = atoi(argv[1]);
 	
     tickets_owned(pid);
     exit(); //return 0;

@@ -181,6 +181,7 @@ UPROGS=\
 	_schdtest \
 	_set_sched \
 	_tickets_owned \
+	_transfer_tickets \
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
