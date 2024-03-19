@@ -12,6 +12,8 @@ main(int argc, char * argv[])
     }
 	int pid = argv[1];
     int tickets = argv[2];
+    printf(1, "pid: %d", pid);
+    printf(1, "ticket: %d", tickets);
     if (pid == 0 && argv[1][0] != '0') {
         printf(1, "Error: Invalid argument. Please provide an integer.\n");
         exit();
@@ -20,8 +22,6 @@ main(int argc, char * argv[])
         printf(1, "Error: Invalid argument. Please provide an integer.\n");
         exit();
     }
-
-    // Check if the conversion failed (i.e., argv[1] is not a valid integer)
 
     transfer_tickets(pid, tickets);
     exit(); //return 0;

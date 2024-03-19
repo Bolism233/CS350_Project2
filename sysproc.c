@@ -8,6 +8,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include <stdbool.h>
+#include <stddef.h>
 
 
 int
@@ -148,59 +149,62 @@ extern struct {
 int sys_tickets_owned(void) {
   int pid;
   bool found = false;
+  struct proc *p;
+
   if(argint(0, &pid) < 0) {
     cprintf("Error: Failed to retrieve policy value.\n");
     return -1; // Indicate error
   }
-  struct proc *p;
+
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     // Check if the PID matches
     if (p->pid == pid) {
         // Return the number of tickets owned by the process
-        cprintf("%d\n", p->ticket);
-        return 0;
+        return p->ticket;
     }
-    continue;
   }
   if (found == false){
     cprintf("Target pid not found\n");
+    return -1;
   }
 }
 
 int sys_transfer_tickets(void){
-  int pid;
-  int tickets;
-  if(argint(0, &pid) < 0) {
-    cprintf("Error: Failed to retrieve policy value.\n");
+  int pid, tickets;
+  if(argint(0, &pid) < 0 || argint(1, &tickets) < 0) {
+    cprintf("Error: Failed to retrieve arguments.\n");
     return -1; // Indicate error
   }
-  struct proc *p3;
-  struct proc *p2;
-  int current_pid = sys_getpid();
-  bool found = false;
-  if(tickets < 0){
-    cprintf("target < 0\n");
-    return -1;
+
+  if(pid < 0) {
+    // target pid doesn't exist
+    return -3; 
   }
-  for(p3 = ptable.proc; p3< &ptable.proc[NPROC]; p3++){
+  if(tickets < 0) {
+    // negative tickets
+    return -1; 
+  }
+
+  struct proc *p1, *p2;
+  int current_pid = sys_getpid();
+  for(p1 = ptable.proc; p1< &ptable.proc[NPROC]; p1++){
     // Check if current PID matches
-    if(p3->pid == current_pid) {
-      if((p3->ticket - 1) < tickets){
-        cprintf("tickets too large\n");
+    if(p1->pid == current_pid) {
+      //cprintf("Current ticket: %d\n", p1->ticket);
+      if(tickets > (p1->ticket -1)){
+        // ticket > p1->ticket-1
         return -2;
       }
       for(p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++){
         // Check if target PID matches
         if(p2->pid == pid) {
-          found = true;
-          p3->ticket -= tickets;
+          p1->ticket -= tickets;
           p2->ticket += tickets;
+          return p1->ticket;
         }
-        continue;
       }
-      if (found == false){
-        cprintf("Target pid not found\n");
-      }
+      //target pid not found
+      return -3;
     }
   }
 }
