@@ -127,86 +127,18 @@ int sys_set_sched(void) {
 
   if(policy == 0){
     //default
-    cprintf("adopting RR scheduling\n");
+    // cprintf("adopting RR scheduling\n");
     current_scheduler = 0;
     return policy;
   }
   if(policy == 1){
     //stride
-    cprintf("adopting stride scheduling\n");
+    // cprintf("adopting stride scheduling\n");
     current_scheduler = 1;
-    cprintf("current scheduler: %d\n", current_scheduler);
+    // cprintf("current scheduler: %d\n", current_scheduler);
     return policy;
   }
   return 0;
-}
-
-extern struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-} ptable;
-
-int sys_tickets_owned(void) {
-  int pid;
-  bool found = false;
-  struct proc *p;
-
-  if(argint(0, &pid) < 0) {
-    cprintf("Error: Failed to retrieve policy value.\n");
-    return -1; // Indicate error
-  }
-
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    // Check if the PID matches
-    if (p->pid == pid) {
-        // Return the number of tickets owned by the process
-        return p->ticket;
-    }
-  }
-  if (found == false){
-    cprintf("Target pid not found\n");
-    return -1;
-  }
-}
-
-int sys_transfer_tickets(void){
-  int pid, tickets;
-  if(argint(0, &pid) < 0 || argint(1, &tickets) < 0) {
-    cprintf("Error: Failed to retrieve arguments.\n");
-    return -1; // Indicate error
-  }
-
-  if(pid < 0) {
-    // target pid doesn't exist
-    return -3; 
-  }
-  if(tickets < 0) {
-    // negative tickets
-    return -1; 
-  }
-
-  struct proc *p1, *p2;
-  int current_pid = sys_getpid();
-  for(p1 = ptable.proc; p1< &ptable.proc[NPROC]; p1++){
-    // Check if current PID matches
-    if(p1->pid == current_pid) {
-      //cprintf("Current ticket: %d\n", p1->ticket);
-      if(tickets > (p1->ticket -1)){
-        // ticket > p1->ticket-1
-        return -2;
-      }
-      for(p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++){
-        // Check if target PID matches
-        if(p2->pid == pid) {
-          p1->ticket -= tickets;
-          p2->ticket += tickets;
-          return p1->ticket;
-        }
-      }
-      //target pid not found
-      return -3;
-    }
-  }
 }
 
 int sys_fork_winner(void) {
